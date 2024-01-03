@@ -19,6 +19,10 @@ GLuint Buffers[NumBuffers];
 
 GLuint program;
 
+double previousFrameTime = 0;
+double currentFrameTime;
+double deltaTime;
+
 int main(int argc, char *argv[])
 {
     glfwInit();//Inirialises glfw
@@ -82,6 +86,7 @@ int main(int argc, char *argv[])
 
 
     while (glfwWindowShouldClose(window) == false) {
+        frameTimeUpdate();
         //input
         ProcessUserInput(window);
 
@@ -96,7 +101,8 @@ int main(int argc, char *argv[])
         glfwSwapBuffers(window); //Swaps the colour buffer
         glfwPollEvents(); //Queries all glfw events
 
-
+        cout << "Current time:" << currentFrameTime;
+        cout << "Delta Time: " << deltaTime;
     }
     
     glfwTerminate();
@@ -138,4 +144,11 @@ void ProcessUserInput(GLFWwindow* WindowIn) {
         cout << "Space pressed\n"; 
         
     }
+}
+
+void frameTimeUpdate() {
+    previousFrameTime = currentFrameTime;
+    currentFrameTime = glfwGetTime();
+    deltaTime = currentFrameTime - previousFrameTime;
+    
 }
