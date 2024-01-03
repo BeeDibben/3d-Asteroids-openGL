@@ -19,6 +19,7 @@ GLuint Buffers[NumBuffers];
 
 GLuint program;
 
+// Time controls
 double previousFrameTime = 0;
 double currentFrameTime;
 double deltaTime;
@@ -56,9 +57,9 @@ int main(int argc, char *argv[])
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  //Sets framebuffer_size_callback as the function called for the window resizing event
 
     float vertices[] = {
-    -0.5f, -0.5f, 0.0f, //pos 0 | x, y, z
-    0.5f, -0.5f, 0.0f, //pos 1
-    0.0f, 0.5f, 0.0f //pos 2
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, //pos 0, colour 0 | x, y, z | r, g, b
+    0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, //pos 1, colour 1
+    0.0f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f, //pos 2, colour 2
     };
 
     //Sets index of VAO
@@ -74,9 +75,13 @@ int main(int argc, char *argv[])
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     //Allocates vertex attribute memory for vertex shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     //Index of vertex attribute for vertex shader
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+    //Index of vertex attribute for vertex shader
+    glEnableVertexAttribArray(1);
 
     //Unbinding
     glBindVertexArray(0);
@@ -101,8 +106,7 @@ int main(int argc, char *argv[])
         glfwSwapBuffers(window); //Swaps the colour buffer
         glfwPollEvents(); //Queries all glfw events
 
-        cout << "Current time:" << currentFrameTime;
-        cout << "Delta Time: " << deltaTime;
+        
     }
     
     glfwTerminate();
@@ -147,8 +151,10 @@ void ProcessUserInput(GLFWwindow* WindowIn) {
 }
 
 void frameTimeUpdate() {
-    previousFrameTime = currentFrameTime;
-    currentFrameTime = glfwGetTime();
-    deltaTime = currentFrameTime - previousFrameTime;
+    // Used to track time since last frame, in order to keep physics and movement consistent.
+    // In the explainations, n = the current frame count
+    previousFrameTime = currentFrameTime; // Overwites n-2, with n-1
+    currentFrameTime = glfwGetTime(); // Overwrites n-1 with n
+    deltaTime = currentFrameTime - previousFrameTime; // Subtracts n-1 from n to compare the time.
     
 }
