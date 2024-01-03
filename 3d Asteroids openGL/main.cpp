@@ -57,9 +57,15 @@ int main(int argc, char *argv[])
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  //Sets framebuffer_size_callback as the function called for the window resizing event
 
     float vertices[] = {
-    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, //pos 0, colour 0 | x, y, z | r, g, b
-    0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, //pos 1, colour 1
-    0.0f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f, //pos 2, colour 2
+        // positions          // colors           // texture coords
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+    };
+    unsigned int indices[] = {
+        0,1,3, // tri 1
+        1,2,3 // tri 2
     };
 
     //Sets index of VAO
@@ -74,14 +80,24 @@ int main(int argc, char *argv[])
     //Allocates buffer memory for the vertices
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    // binds VAO buffer for Indices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffers[Indices]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+
     //Allocates vertex attribute memory for vertex shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     //Index of vertex attribute for vertex shader
     glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
     //Index of vertex attribute for vertex shader
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    //Index of vertex attribute for vertex shader
+    glEnableVertexAttribArray(2);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     //Unbinding
     glBindVertexArray(0);
@@ -100,7 +116,7 @@ int main(int argc, char *argv[])
         glClear(GL_COLOR_BUFFER_BIT); //Clears the colour buffer
 
         glBindVertexArray(VAOs[0]); //Bind buffer object to render
-        glDrawArrays(GL_TRIANGLES, 0, 3); //Render buffer object
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //Render buffer object
 
         //Refreshing
         glfwSwapBuffers(window); //Swaps the colour buffer
