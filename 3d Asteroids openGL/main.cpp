@@ -6,8 +6,12 @@
 #include "shaders/LoadShaders.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace std;
+using namespace glm;
 
 //VAO vertex attribute positions in correspondence to vertex attribute type
 enum VAO_IDs { Triangles, Indices, Colours, Textures, NumVAOs = 2 };
@@ -20,6 +24,7 @@ enum Buffer_IDs { ArrayBuffer, NumBuffers = 4 };
 GLuint Buffers[NumBuffers];
 
 GLuint program;
+mat4 transform;
 
 // Time controls
 double previousFrameTime = 0;
@@ -125,6 +130,18 @@ int main(int argc, char *argv[])
     stbi_image_free(data);
 
 
+    // Transform data
+    transform = mat4(1.0f);
+    transform = rotate(transform, radians(20.0f), vec3(0.0f, 0.0f, 1.0f));
+    transform = scale(transform, vec3(0.5, 0.5, 0.5));
+    GLint transformIndex = glGetUniformLocation(program, "transformIn");
+    glUniformMatrix4fv(transformIndex, 1, GL_FALSE, value_ptr(transform));
+
+
+    //Game data
+    
+
+
     while (glfwWindowShouldClose(window) == false) {
         frameTimeUpdate();
         //input
@@ -143,6 +160,7 @@ int main(int argc, char *argv[])
         glfwPollEvents(); //Queries all glfw events
 
         
+
     }
     
     glfwTerminate();
