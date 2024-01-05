@@ -10,6 +10,10 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+// - - - OpenGL processes - - - //
+
+
 using namespace std;
 using namespace glm;
 
@@ -26,10 +30,17 @@ GLuint Buffers[NumBuffers];
 GLuint program;
 mat4 transform;
 
-// Time controls
+
+// - - -Game data - - - //
+
+    // Time controls //
 double previousFrameTime = 0;
 double currentFrameTime;
 double deltaTime;
+
+//Object data
+float rotation = 10;
+
 
 int main(int argc, char *argv[])
 {
@@ -130,22 +141,28 @@ int main(int argc, char *argv[])
     stbi_image_free(data);
 
 
-    // Transform data
-    transform = mat4(1.0f);
-    transform = rotate(transform, radians(20.0f), vec3(0.0f, 0.0f, 1.0f));
-    transform = scale(transform, vec3(0.5, 0.5, 0.5));
-    GLint transformIndex = glGetUniformLocation(program, "transformIn");
-    glUniformMatrix4fv(transformIndex, 1, GL_FALSE, value_ptr(transform));
-
-
-    //Game data
     
 
+
+    
 
     while (glfwWindowShouldClose(window) == false) {
         frameTimeUpdate();
         //input
         ProcessUserInput(window);
+
+
+        rotation = rotation + (10 * deltaTime);
+
+        // Transform data
+        transform = mat4(1.0f);
+        transform = rotate(transform, float(rotation), vec3(0.0, 0.0, 0.1));
+        transform = scale(transform, vec3(0.5, 0.5, 0.5));
+        GLint transformIndex = glGetUniformLocation(program, "transformIn");
+        glUniformMatrix4fv(transformIndex, 1, GL_FALSE, value_ptr(transform));
+
+
+
 
         //Rendering
         glClearColor(0.25f, 0.0f, 1.0f, 1.0f); //Colour to display on cleared window
@@ -158,6 +175,8 @@ int main(int argc, char *argv[])
         //Refreshing
         glfwSwapBuffers(window); //Swaps the colour buffer
         glfwPollEvents(); //Queries all glfw events
+
+        
 
         
 
@@ -210,8 +229,8 @@ void frameTimeUpdate() {
     previousFrameTime = currentFrameTime; // Overwites n-2, with n-1
     currentFrameTime = glfwGetTime(); // Overwrites n-1 with n
     deltaTime = currentFrameTime - previousFrameTime; // Subtracts n-1 from n to compare the time.
-    
 }
+
 
 void favouriteColour() {
     cout << "#228b22";

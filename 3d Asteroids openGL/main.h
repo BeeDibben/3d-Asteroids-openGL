@@ -8,4 +8,6 @@ void ProcessUserInput(GLFWwindow* windowIn); //Captures user input for a given w
 
 void frameTimeUpdate(); // records change in time since the last frame
 
+float getDeltaTime(); // Returns the change in time since the last frame
+
 void favouriteColour(); 
