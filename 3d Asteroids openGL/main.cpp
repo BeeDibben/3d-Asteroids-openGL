@@ -4,6 +4,8 @@
 #include <iostream>
 #include "main.h"
 #include "shaders/LoadShaders.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using namespace std;
 
@@ -103,7 +105,24 @@ int main(int argc, char *argv[])
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    //Texturing here
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    int width, height, colourChanels;
+    unsigned char* data = stbi_load("media/wall.jpg", &width, &height, &colourChanels, 0);
 
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+        cout << "Faild to load texture";
+        return -1;
+    }
+    stbi_image_free(data);
 
 
     while (glfwWindowShouldClose(window) == false) {
@@ -115,6 +134,7 @@ int main(int argc, char *argv[])
         glClearColor(0.25f, 0.0f, 1.0f, 1.0f); //Colour to display on cleared window
         glClear(GL_COLOR_BUFFER_BIT); //Clears the colour buffer
 
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAOs[0]); //Bind buffer object to render
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //Render buffer object
 

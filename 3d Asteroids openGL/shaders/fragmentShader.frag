@@ -1,10 +1,11 @@
 #version 460
 //Colour value to send to next stage
 out vec4 FragColor;
-in vec3 ourColor;
+in vec2 texCoordFrag;
+uniform sampler2D texturein;
+
 
 void main()
 {
-    //RGBA values
-    FragColor = vec4(ourColor, 1.0f);
+    FragColor = texture(texturein, texCoordFrag); //Texturing
 }
