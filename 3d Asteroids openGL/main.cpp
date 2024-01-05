@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     int width, height, colourChanels;
-    unsigned char* data = stbi_load("media/wall.jpg", &width, &height, &colourChanels, 0);
+    unsigned char* data = stbi_load("media/drawnWall.jpg", &width, &height, &colourChanels, 0);
 
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
