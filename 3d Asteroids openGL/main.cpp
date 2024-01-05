@@ -28,10 +28,19 @@ enum Buffer_IDs { ArrayBuffer, NumBuffers = 4 };
 GLuint Buffers[NumBuffers];
 
 GLuint program;
+ 
 mat4 transform;
+mat4 model;
+mat4 view;
+mat4 projection;
 
 
 // - - -Game data - - - //
+
+// Window Data
+
+int windowWidth = 1200;
+int windowHeight = 720;
 
     // Time controls //
 double previousFrameTime = 0;
@@ -46,7 +55,7 @@ int main(int argc, char *argv[])
 {
     glfwInit();//Inirialises glfw
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Asteroids 3D", NULL, NULL); //Initialisation of 'GLFWwindow' object
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Asteroids 3D", NULL, NULL); //Initialisation of 'GLFWwindow' object
 
     if (window == NULL) //Checks if window has been successfully instantiated
     {
@@ -141,29 +150,46 @@ int main(int argc, char *argv[])
     stbi_image_free(data);
 
 
-    
+    // Model View Projection (MVP)
+
+    model = mat4(1.0f);
+    view = mat4(1.0f);
+    projection = mat4(1.0f);
+    model = scale(model, vec3(2.0f, 2.0f, 2.0f));
+    model = rotate(model, float(radians(-45.0f)), vec3(1.0f, 0.0f, 0.0f));
+    model = translate(model, vec3( 0.0f, 1.0f, -1.5f));
+    view = translate(view, vec3(0.0f, 0.0f, -3.0f));
+    projection = perspective(radians(45.0f), (float)(windowWidth / windowHeight), 0.1f, 100.0f);
+
+    GLint modelIndex = glGetUniformLocation(program, "model");
+    glUniformMatrix4fv(modelIndex, 1, GL_FALSE, value_ptr(model));
+    GLint viewIndex = glGetUniformLocation(program, "view");
+    glUniformMatrix4fv(viewIndex, 1, GL_FALSE, value_ptr(view));
+    GLint projectionIndex = glGetUniformLocation(program, "projection");
+    glUniformMatrix4fv(projectionIndex, 1, GL_FALSE, value_ptr(projection));
 
 
-    
+
+
+  // - - - Game Loop - - - //  
 
     while (glfwWindowShouldClose(window) == false) {
         frameTimeUpdate();
         //input
         ProcessUserInput(window);
 
-
-        rotation = rotation + (10 * deltaTime);
+        //rotation = rotation + (10 * deltaTime);
 
         // Transform data
         transform = mat4(1.0f);
-        transform = rotate(transform, float(rotation), vec3(0.0, 0.0, 0.1));
-        transform = scale(transform, vec3(0.5, 0.5, 0.5));
+        //transform = rotate(transform, float(rotation), vec3(0.0, 0.0, 0.1));
+        //transform = scale(transform, vec3(0.5, 0.5, 0.5));
         GLint transformIndex = glGetUniformLocation(program, "transformIn");
         glUniformMatrix4fv(transformIndex, 1, GL_FALSE, value_ptr(transform));
 
 
 
-
+          
         //Rendering
         glClearColor(0.25f, 0.0f, 1.0f, 1.0f); //Colour to display on cleared window
         glClear(GL_COLOR_BUFFER_BIT); //Clears the colour buffer
@@ -186,6 +212,17 @@ int main(int argc, char *argv[])
 
     return 0; //Ends the current runtime
 }
+
+
+
+
+
+
+
+
+// - - - Function Defintions - - - //
+
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     //Resizes the window based on desired size
