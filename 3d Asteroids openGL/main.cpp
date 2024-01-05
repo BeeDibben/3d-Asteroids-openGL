@@ -212,3 +212,7 @@ void frameTimeUpdate() {
     deltaTime = currentFrameTime - previousFrameTime; // Subtracts n-1 from n to compare the time.
     
 }
+
+void favouriteColour() {
+    cout << "#228b22";
+}
