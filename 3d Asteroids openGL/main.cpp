@@ -51,6 +51,7 @@ double deltaTime;
 float rotation = 10;
 
 
+
 int main(int argc, char *argv[])
 {
     glfwInit();//Inirialises glfw
@@ -128,10 +129,19 @@ int main(int argc, char *argv[])
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
- /* unsigned int indices[] = {
-        0,1,3, // tri 1
-        1,2,3 // tri 2
-    };*/
+
+    vec3 cubePositions[] = {
+    vec3(0.0f,  0.0f,  0.0f),
+    vec3(2.0f,  5.0f, -15.0f),
+    vec3(-1.5f, -2.2f, -2.5f),
+    vec3(-3.8f, -2.0f, -12.3f),
+    vec3(2.4f, -0.4f, -3.5f),
+    vec3(-1.7f,  3.0f, -7.5f),
+    vec3(1.3f, -2.0f, -2.5f),
+    vec3(1.5f,  2.0f, -2.5f),
+    vec3(1.5f,  0.2f, -1.5f),
+    vec3(-1.3f,  1.0f, -1.5f)
+    };
 
     //Sets index of VAO
     glGenVertexArrays(NumVAOs, VAOs);
@@ -206,18 +216,15 @@ int main(int argc, char *argv[])
 
         rotation = rotation + (50 * deltaTime);
 
-        model = mat4(1.0f);
         view = mat4(1.0f);
         projection = mat4(1.0f);
-        model = scale(model, vec3(1.0f, 1.0f, 1.0f));
-        model = rotate(model, float(radians(rotation)), vec3(0.5f, 0.0f, 0.0f));
+
         //model = translate(model, vec3(0.0f, 0.0f, -1.0f));
         view = translate(view, vec3(0.0f, 0.0f, -3.0f));
         projection = perspective(radians(45.0f), (float)(windowWidth / windowHeight), 0.1f, 100.0f);
 
 
         //refreshing the mvp
-        glUniformMatrix4fv(modelIndex, 1, GL_FALSE, value_ptr(model));
         glUniformMatrix4fv(viewIndex, 1, GL_FALSE, value_ptr(view));
         glUniformMatrix4fv(projectionIndex, 1, GL_FALSE, value_ptr(projection));
 
@@ -245,7 +252,23 @@ int main(int argc, char *argv[])
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAOs[0]); //Bind buffer object to render
         //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //Render buffer object
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        
+        for (int i = 0; i < 10; i++)
+        {
+            float angle = 20.0f * i * deltaTime;
+
+            
+            model = mat4(1.0f);
+            //model = scale(model, vec3(1.0f, 1.0f, 1.0f));
+            model = rotate(model, float(radians(rotation + angle)), cubePositions[i]);
+            model = translate(model, cubePositions[i]);
+            
+
+
+            glUniformMatrix4fv(modelIndex, 1, GL_FALSE, value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        }
 
         //Refreshing
         glfwSwapBuffers(window); //Swaps the colour buffer
