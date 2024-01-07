@@ -16,6 +16,9 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{9b8f9d86-cda8-475e-b39e-5d3c925bacc4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Classes">
+      <UniqueIdentifier>{e64943c2-709f-4043-8f09-99b74cc69786}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -34,6 +37,12 @@
     </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Asteroid.h">
+      <Filter>Source Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Lazer.h">
+      <Filter>Source Files\Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,6 +9,12 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <irrKlang/irrKlang.h>
+
+
+#define RENDER_DISTANCE 250
+#define MAP_SIZE RENDER_DISTANCE*RENDER_DISTANCE
+
 
 
 // - - - OpenGL processes - - - //
@@ -16,6 +22,7 @@
 
 using namespace std;
 using namespace glm;
+using namespace irrklang;
 
 //VAO vertex attribute positions in correspondence to vertex attribute type
 enum VAO_IDs { Triangles, Indices, Colours, Textures, NumVAOs = 2 };
@@ -34,6 +41,10 @@ mat4 model;
 mat4 view;
 mat4 projection;
 
+// Audio setup
+ISoundEngine* soundEngine = createIrrKlangDevice();
+
+
 
 // - - -Game data - - - //
 
@@ -43,18 +54,45 @@ int windowWidth = 1200;
 int windowHeight = 720;
 
     // Time controls //
-double previousFrameTime = 0;
-double currentFrameTime;
-double deltaTime;
+float previousFrameTime = 0;
+float currentFrameTime;
+float deltaTime;
 
 //Object data
 float rotation = 10;
 
+//Camera
+bool firstMouse = true;
+
+vec3 camPosition = vec3(0.0f, 0.0f, 3.0);
+vec3 camFront = vec3(0.0f, 0.0f, -1.0f);
+vec3 camUp = vec3(0.0f, 1.0f, 0.0f);
+
+float camPitch = 0.0f;
+float camYaw = -90.0f;
+
+float lastX = 800.0f / 2.0f;
+float lastY = 600.0f / 2.0f;
+
+float FOV = 50.0f;
+
+float forwardSpeed = 8;
+float directionalSpeed = 5;
+
+float sensitivity = 0.005f * deltaTime;
+
+//PCG (procedural content generation)
 
 
 int main(int argc, char *argv[])
 {
     glfwInit();//Inirialises glfw
+
+    //loades media files into memory to prevent lag
+    soundEngine->play2D("media/laser_sfx.wav", false, true);
+    soundEngine->play2D("media/Space_Game_Ambient.wav", false, true);
+    soundEngine->setSoundVolume(0.5);
+
 
     GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Asteroids 3D", NULL, NULL); //Initialisation of 'GLFWwindow' object
 
@@ -82,9 +120,19 @@ int main(int argc, char *argv[])
 
     glViewport(0, 0, 1280, 720);//Defines Window size
 
+    // glfw setup
+
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  //Sets framebuffer_size_callback as the function called for the window resizing event
 
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST); // Ensures accurate depth calculation for rendering
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // removes cursor from veiw when engine is running
+    
+    glfwSetCursorPosCallback(window, mouseCallback); // Sets the function for retreiveing mouse data
+
+    glfwSetMouseButtonCallback(window, mouse_button_callback); //sets the funciton that will handle mouse button inputs
+
+    //Models info
 
     float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -143,6 +191,8 @@ int main(int argc, char *argv[])
     vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    
+
     //Sets index of VAO
     glGenVertexArrays(NumVAOs, VAOs);
     //Binds VAO to a buffer
@@ -155,25 +205,16 @@ int main(int argc, char *argv[])
     //Allocates buffer memory for the vertices
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // binds VAO buffer for Indices
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffers[Indices]);
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-
     //Allocates vertex attribute memory for vertex shader
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     //Index of vertex attribute for vertex shader
     glEnableVertexAttribArray(0);
-
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-    //glEnableVertexAttribArray(1);
 
 
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     //Unbinding
     glBindVertexArray(0);
@@ -214,33 +255,24 @@ int main(int argc, char *argv[])
         ProcessUserInput(window);
 
 
+
+        
+        
         rotation = rotation + (50 * deltaTime);
 
         view = mat4(1.0f);
         projection = mat4(1.0f);
 
-        //model = translate(model, vec3(0.0f, 0.0f, -1.0f));
-        view = translate(view, vec3(0.0f, 0.0f, -3.0f));
+
+
         projection = perspective(radians(45.0f), (float)(windowWidth / windowHeight), 0.1f, 100.0f);
+        view = lookAt(camPosition, camPosition + camFront, camUp); // Camera
+
 
 
         //refreshing the mvp
         glUniformMatrix4fv(viewIndex, 1, GL_FALSE, value_ptr(view));
         glUniformMatrix4fv(projectionIndex, 1, GL_FALSE, value_ptr(projection));
-
-
-
-
-
-
-        //rotation = rotation + (5 * deltaTime);
-
-        // Transform data
-        //transform = mat4(1.0f);
-        //transform = rotate(transform, float(rotation), vec3(0.0, 0.0, 0.1));
-        //transform = scale(transform, vec3(0.5, 0.5, 0.5));
-        //GLint transformIndex = glGetUniformLocation(program, "transformIn");
-        //glUniformMatrix4fv(transformIndex, 1, GL_FALSE, value_ptr(transform));
 
 
 
@@ -306,35 +338,98 @@ void ProcessUserInput(GLFWwindow* WindowIn) {
     if (glfwGetKey(WindowIn, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(WindowIn, true);
     }
-
+    
 
     // -- Movement controlls -- //
     //Move forward
     if (glfwGetKey(WindowIn, GLFW_KEY_W) == GLFW_PRESS) {
         cout << "W pressed\n";
+        camPosition += (forwardSpeed*deltaTime) * camFront;
     }
     //Move Backward
     if (glfwGetKey(WindowIn, GLFW_KEY_S) == GLFW_PRESS) {
         cout << "S pressed\n";
+        camPosition -= (directionalSpeed*deltaTime) * camFront;
     }
     //Move Left
     if (glfwGetKey(WindowIn, GLFW_KEY_A) == GLFW_PRESS) {
         cout << "A pressed\n";
+        camPosition -= (normalize(cross(camFront, camUp))*deltaTime) * directionalSpeed;
     }
     //Move Right
     if (glfwGetKey(WindowIn, GLFW_KEY_D) == GLFW_PRESS) {
-        cout << "D pressed\n";
+        cout << "A pressed\n";
+        camPosition += (normalize(cross(camFront, camUp))*deltaTime) * directionalSpeed;
     }
     //Move Up
     if (glfwGetKey(WindowIn, GLFW_KEY_SPACE) == GLFW_PRESS) {
         cout << "Space pressed\n"; 
-        
+        camPosition +=  camUp * (directionalSpeed*deltaTime);
     }
+    if (glfwGetKey(WindowIn, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        cout << "L-Shift pressed\n"; 
+        camPosition -=  camUp * (directionalSpeed*deltaTime);
+    }
+    
 
     //bonus controll
     if (glfwGetKey(WindowIn, GLFW_KEY_M) == GLFW_PRESS) {
         favouriteColour();
     }
+}
+
+void mouseCallback(GLFWwindow* window, double xposIn, double yposIn) {
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f; // change this value to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    camYaw += xoffset;
+    camPitch += yoffset;
+
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (camPitch > 89.0f)
+        camPitch = 89.0f;
+    if (camPitch < -89.0f)
+        camPitch = -89.0f;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(camYaw)) * cos(glm::radians(camPitch));
+    front.y = sin(glm::radians(camPitch));
+    front.z = sin(glm::radians(camYaw)) * cos(glm::radians(camPitch));
+    camFront = glm::normalize(front);
+
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        // plays an audio sample using the library IRRKLANG, as instructed on the LEARNOPENGL website: https://learnopengl.com/In-Practice/2D-Game/Audio
+        cout << "Left Mouse button pressed.\n";
+        soundEngine->play2D("media/laser_sfx.wav", false); // Royalty free sfx
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        cout << "Right Mouse button pressed.\n";
+        if (soundEngine->isCurrentlyPlaying("media/Space_Game_Ambient.wav") == true) {
+            cout << "space music is playing\n";
+            soundEngine->play2D("media/Space_Game_Ambient.wav", true, false);
+        }
+    }
+
 }
 
 void frameTimeUpdate() {
