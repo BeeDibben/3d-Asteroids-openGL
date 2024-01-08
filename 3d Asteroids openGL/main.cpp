@@ -9,16 +9,22 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <irrKlang/irrKlang.h>
+#include <irrKlang/irrKlang.h> //  Used for playing audio as instructed on the LEARNOPENGL website: https://learnopengl.com/In-Practice/2D-Game/Audio
 
 
-#define RENDER_DISTANCE 250
-#define MAP_SIZE RENDER_DISTANCE*RENDER_DISTANCE
 
 
 
 // - - - OpenGL processes - - - //
 
+// PCG
+
+#define RENDER_DISTANCE 128
+#define MAP_SIZE RENDER_DISTANCE*RENDER_DISTANCE
+
+const int squaresRow = RENDER_DISTANCE - 1;
+const int trianglePerSquare = 2;
+const int TriangleGrid = squaresRow * squaresRow * trianglePerSquare;
 
 using namespace std;
 using namespace glm;
@@ -68,7 +74,7 @@ vec3 camPosition = vec3(0.0f, 0.0f, 3.0);
 vec3 camFront = vec3(0.0f, 0.0f, -1.0f);
 vec3 camUp = vec3(0.0f, 1.0f, 0.0f);
 
-float camPitch = 0.0f;
+float camPitch = 0.0f;  
 float camYaw = -90.0f;
 
 float lastX = 800.0f / 2.0f;
@@ -81,7 +87,7 @@ float directionalSpeed = 5;
 
 float sensitivity = 0.005f * deltaTime;
 
-//PCG (procedural content generation)
+
 
 
 int main(int argc, char *argv[])
@@ -133,7 +139,7 @@ int main(int argc, char *argv[])
     glfwSetMouseButtonCallback(window, mouse_button_callback); //sets the funciton that will handle mouse button inputs
 
     //Models info
-
+    /*
     float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
      0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -190,8 +196,57 @@ int main(int argc, char *argv[])
     vec3(1.5f,  0.2f, -1.5f),
     vec3(-1.3f,  1.0f, -1.5f)
     };
+    */
 
+    GLfloat terrainVerticies [MAP_SIZE][6];
+    float drawingStartPosition = 1.0f;
+    float columnVerticiesOffset = drawingStartPosition;
+    float rowVericiesOffset = drawingStartPosition;
+
+    int rowIndex = 0;
     
+    for (int i = 0; i < MAP_SIZE; i++) {
+        //verticcies
+        terrainVerticies[i][0] = columnVerticiesOffset;
+        terrainVerticies[i][1] = columnVerticiesOffset;
+        terrainVerticies[i][2] = columnVerticiesOffset;
+
+        //colours
+        terrainVerticies[i][4] = columnVerticiesOffset;
+        terrainVerticies[i][5] = columnVerticiesOffset;
+        terrainVerticies[i][6] = columnVerticiesOffset;
+        columnVerticiesOffset -= 0.0625f;
+        rowIndex++;
+        if (rowIndex == RENDER_DISTANCE) {
+            rowIndex = 0;
+            columnVerticiesOffset = drawingStartPosition;
+            rowVericiesOffset -= 0.0625f;
+        }
+
+    }
+
+
+    GLuint terrainIndicies[TriangleGrid][3];
+    int columnIndiciesOffset = 0;
+    int rowIndiciesOffset = 0;
+    rowIndex = 0;
+
+    for (int i = 0; i < TriangleGrid - 1; i += 2) {
+        terrainIndicies[i][0] = columnIndiciesOffset * rowIndiciesOffset; 
+        terrainIndicies[i][2] = RENDER_DISTANCE + columnIndiciesOffset * rowIndiciesOffset;
+        terrainIndicies[i][1] = 1 + columnIndiciesOffset * rowIndiciesOffset;
+        terrainIndicies[i][0] = 1 + columnIndiciesOffset * rowIndiciesOffset;
+        terrainIndicies[i+1][2] = RENDER_DISTANCE + columnIndiciesOffset * rowIndiciesOffset;
+        terrainIndicies[i+1][1] = 1 + RENDER_DISTANCE + columnIndiciesOffset * rowIndiciesOffset;
+        columnIndiciesOffset += 1;
+        rowIndex++;
+        if (rowIndex == squaresRow) {
+            rowIndex = 0;
+            columnIndiciesOffset = 0;
+            rowIndiciesOffset = RENDER_DISTANCE;
+        }
+
+    }
 
     //Sets index of VAO
     glGenVertexArrays(NumVAOs, VAOs);
@@ -203,25 +258,28 @@ int main(int argc, char *argv[])
     //Binds VAO to array buffer
     glBindBuffer(GL_ARRAY_BUFFER, Buffers[Triangles]);
     //Allocates buffer memory for the vertices
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVerticies), terrainVerticies, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffers[Indices]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(terrainIndicies), terrainIndicies, GL_STATIC_DRAW);
 
     //Allocates vertex attribute memory for vertex shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     //Index of vertex attribute for vertex shader
     glEnableVertexAttribArray(0);
 
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     //Unbinding
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //Texturing here
-    unsigned int texture;
+    /*unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -238,7 +296,7 @@ int main(int argc, char *argv[])
         return -1;
     }
     stbi_image_free(data);
-
+    */
 
     // Model View Projection (MVP)
     GLint modelIndex = glGetUniformLocation(program, "model");
@@ -264,6 +322,11 @@ int main(int argc, char *argv[])
         projection = mat4(1.0f);
 
 
+        //transform
+        model = mat4(1.0f);
+        model = translate(model, vec3(0.0f, -2.0f, -1.5f));
+        model = rotate(model, radians(0.0f), vec3(1.0, 0.0, 0.0));
+
 
         projection = perspective(radians(45.0f), (float)(windowWidth / windowHeight), 0.1f, 100.0f);
         view = lookAt(camPosition, camPosition + camFront, camUp); // Camera
@@ -275,16 +338,23 @@ int main(int argc, char *argv[])
         glUniformMatrix4fv(projectionIndex, 1, GL_FALSE, value_ptr(projection));
 
 
+        //transform 
+
+
 
           
         //Rendering
         glClearColor(0.25f, 0.0f, 1.0f, 1.0f); //Colour to display on cleared window
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); //Clears the colour buffer
 
-        glBindTexture(GL_TEXTURE_2D, texture);
+        //glBindTexture(GL_TEXTURE_2D, texture);
+
+
         glBindVertexArray(VAOs[0]); //Bind buffer object to render
-        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //Render buffer object
+        glDrawElements(GL_TRIANGLES, MAP_SIZE * 32, GL_UNSIGNED_INT, 0); //Render buffer object
         
+
+        /*
         for (int i = 0; i < 10; i++)
         {
             float angle = 20.0f * i * deltaTime;
@@ -301,7 +371,7 @@ int main(int argc, char *argv[])
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
         }
-
+        */
         //Refreshing
         glfwSwapBuffers(window); //Swaps the colour buffer
         glfwPollEvents(); //Queries all glfw events
@@ -418,7 +488,6 @@ void mouseCallback(GLFWwindow* window, double xposIn, double yposIn) {
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        // plays an audio sample using the library IRRKLANG, as instructed on the LEARNOPENGL website: https://learnopengl.com/In-Practice/2D-Game/Audio
         cout << "Left Mouse button pressed.\n";
         soundEngine->play2D("media/laser_sfx.wav", false); // Royalty free sfx
     }
